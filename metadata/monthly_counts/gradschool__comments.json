@@ -1,0 +1,17 @@
+{
+  "subreddit": "gradschool",
+  "content_type": "comments",
+  "counts": {
+    "2019-01": 50000,
+    "2019-02": 50000,
+    "2019-03": 50000,
+    "2019-04": 50000,
+    "2019-05": 50000,
+    "2019-06": 50000
+  },
+  "median": 25.0,
+  "valid_rate": 0.85,
+  "factor_source": "synthetic_estimate",
+  "method": "aggregate:dry_run",
+  "updated_at": "2026-09-04T22:07:15.710335+00:00"
+}

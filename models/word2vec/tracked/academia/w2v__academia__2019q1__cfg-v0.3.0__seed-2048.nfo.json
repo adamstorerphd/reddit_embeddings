@@ -1,0 +1,40 @@
+{
+  "model_id": "w2v__academia__2019q1",
+  "subreddit": "academia",
+  "corpus_type": "tracked",
+  "period_span": "2019q1",
+  "date_range": {
+    "start": "2019-01-01",
+    "end": "2019-04-01"
+  },
+  "replay_query": {
+    "source": "arctic_shift_api",
+    "comments_url": "https://arctic-shift.photon-reddit.com/api/comments/search?after=2019-01-01&before=2019-04-01&sort=asc&subreddit=academia",
+    "submissions_url": "https://arctic-shift.photon-reddit.com/api/posts/search?after=2019-01-01&before=2019-04-01&sort=asc&subreddit=academia",
+    "sampling_fraction": 1.0,
+    "sampling_rule": "full_census"
+  },
+  "hyperparameters": {
+    "architecture": "skipgram_word2vec",
+    "dim": 200,
+    "window": 5,
+    "negative": 5,
+    "epochs": 5,
+    "min_count": 20,
+    "subsample": 1e-05,
+    "initial_lr": 0.025,
+    "seed": 2048
+  },
+  "provenance": {
+    "config_version": "v0.3.0",
+    "config_sha256": "480d9daad30fb73418b0537bb290824b3d6f3d90a5c811cc6c74491dd30ab3d0",
+    "trained_at_utc": "2026-09-04T22:07:17.647104+00:00",
+    "train_secs": 0.03,
+    "docs_trained": 400,
+    "tokens_trained": 5600,
+    "vocab_size": 413,
+    "corpus_total_words": 5600,
+    "gensim_version": "4.4.0",
+    "python_version": "3.11.2"
+  }
+}

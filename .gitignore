@@ -22,9 +22,11 @@ shards/tokenized/**/*.jsonl.gz
 !shards/tokenized/.gitkeep
 !shards/tokenized/pilot/.gitkeep
 
-# Intermediate training checkpoints
+# Intermediate training checkpoints and full model binary weights
 models/checkpoints/*.model*
 !models/checkpoints/.gitkeep
+models/word2vec/**/*.model
+!models/word2vec/.gitkeep
 
 # Large companion numpy arrays (>100MB cannot be pushed to GitHub)
 # (Models can be stored on Google Drive or Git LFS)
