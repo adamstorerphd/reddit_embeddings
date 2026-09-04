@@ -2,15 +2,14 @@
 """Reddit Word-Embedding Pipeline - Automated Orchestrator.
 
 Provides continuous execution, progress tracking, idempotent checkpointing,
-ephemeral stream-train-and-discard data ingestion, and optional Git auto-commits.
+support for either ALL OF REDDIT or SPECIFIC SUBREDDITS, and optional Git auto-commits.
 
 Usage:
     python run_pipeline.py --help
-    python run_pipeline.py --dry-run               # Run complete offline dry-run test
-    python run_pipeline.py --stage 0               # Run Stage 0 (Setup)
-    python run_pipeline.py --stage 1 --dry-run     # Run Stage 1 Pilot
-    python run_pipeline.py --stream-train          # Stream text -> train models -> delete text
-    python run_pipeline.py --auto-commit           # Run with automatic Git commits
+    python run_pipeline.py --mode all_reddit --dry-run      # Entirety of Reddit (global stream)
+    python run_pipeline.py --mode subreddit_list --dry-run  # Specific subreddits
+    python run_pipeline.py --subreddits "AskAcademia,PhD"   # Custom list of subreddits
+    python run_pipeline.py --auto-commit --auto-push        # Auto push to GitHub
 """
 
 import argparse
@@ -142,9 +141,8 @@ def run_stage_0(root: Path, cfg: dict, lg: logging.Logger) -> bool:
 # ==============================================================================
 # STAGE 1: Data-Access Pilot
 # ==============================================================================
-def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False) -> bool:
-    lg.info(f"Running Stage 1: Data-Access Pilot (dry_run={dry_run})")
-    pilot_subs = ["AskAcademia", "Academia", "PhD"]
+def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, targets: List[str], dry_run: bool = False) -> bool:
+    lg.info(f"Running Stage 1: Data-Access Pilot for targets={targets} (dry_run={dry_run})")
     pilot_weeks = [("2015-06-01", "2015-06-08"), ("2019-01-01", "2019-01-08"), ("2023-07-01", "2023-07-08")]
     types = ["comments", "submissions"]
     max_records = 400 if dry_run else 3000
@@ -163,9 +161,8 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
     cfg_sha = sha256_file(root / "config/project_config.yaml")
     today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     n_done, n_skip, n_fail = 0, 0, 0
-    cell_stats = []
 
-    for sub in pilot_subs:
+    for sub in targets:
         for ws, we in pilot_weeks:
             for ctype in types:
                 unit = f"asapi__{sub}__{ctype}__{ws}_{we}"
@@ -176,6 +173,10 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
                         n_skip += 1
                         continue
 
+                query_url = f"{endpoint[ctype]}?after={ws}&before={we}&sort=asc"
+                if sub != "ALL_REDDIT":
+                    query_url += f"&subreddit={sub}"
+
                 row = {
                     "unit_id": unit, "source": "arctic_shift_api", "subreddit": sub,
                     "start_ts": ws + "T00:00:00Z", "end_ts": we + "T00:00:00Z", "content_type": ctype,
@@ -185,7 +186,7 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
                     "n_read": 0, "n_usable": 0, "token_estimate": 0, "output_tmp": "",
                     "output_final": "", "output_sha256": "", "error_category": "", "error_excerpt": "",
                     "config_version": cfg["config_version"], "config_sha256": cfg_sha, "retrieval_date": today,
-                    "source_url_or_query": f"{endpoint[ctype]}?subreddit={sub}&after={ws}&before={we}&sort=asc",
+                    "source_url_or_query": query_url,
                 }
                 upsert_manifest_row(rman, row, ["unit_id"], RETRIEVAL_COLS)
 
@@ -202,7 +203,7 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
                                 "id": f"t{1 if ctype == 'comments' else 3}_{i:05d}",
                                 "subreddit": sub,
                                 "created_utc": after + i,
-                                "body": f"Synthetic pilot record {i} about academia, not impossible but challenging.",
+                                "body": f"Synthetic pilot record {i} for {sub}, not impossible but challenging.",
                                 "title": f"Synthetic post {i}",
                                 "selftext": "Research and publication take time and effort.",
                             }
@@ -210,17 +211,17 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
                         ]
                     else:
                         recs = []
+                        params = {"after": after, "before": end_u, "limit": 100, "sort": "asc"}
+                        if sub != "ALL_REDDIT":
+                            params["subreddit"] = sub
                         while len(recs) < max_records:
-                            r = retry_get(
-                                endpoint[ctype],
-                                params={"subreddit": sub, "after": after, "before": end_u, "limit": 100, "sort": "asc"},
-                                tries=3,
-                            )
+                            r = retry_get(endpoint[ctype], params=params, tries=3)
                             batch = r.json().get("data", [])
                             if not batch:
                                 break
                             recs.extend(batch)
                             after = int(batch[-1].get("created_utc", after)) + 1
+                            params["after"] = after
                             if len(batch) < 100:
                                 break
                         recs = recs[:max_records]
@@ -265,7 +266,6 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
                     })
                     upsert_manifest_row(rman, row, ["unit_id"], RETRIEVAL_COLS)
                     n_done += 1
-                    cell_stats.append({"unit": unit, "n_read": n_read, "n_usable": n_use, "tokens": tok})
                     lg.info(f"Pilot unit OK: {unit} (read={n_read}, usable={n_use}, tokens={tok})")
                 except Exception as e:
                     lg.error(f"Pilot unit FAIL: {unit} ({e})")
@@ -280,9 +280,8 @@ def run_stage_1(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False
 # ==============================================================================
 # STAGE 2: Counts & Periods (with Freeze Gate)
 # ==============================================================================
-def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, dry_run: bool = False) -> bool:
-    lg.info(f"Running Stage 2: Counts & Periods (freeze={freeze}, dry_run={dry_run})")
-    candidate_subs = ["AskAcademia", "Academia", "PhD"]
+def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, targets: List[str], freeze: bool = True, dry_run: bool = False) -> bool:
+    lg.info(f"Running Stage 2: Counts & Periods for targets={targets} (freeze={freeze}, dry_run={dry_run})")
     months = ["2015-06", "2019-01", "2023-07"] if not dry_run else ["2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06"]
 
     p = cfg["periodization"]
@@ -293,9 +292,8 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
 
     counts: Dict[tuple, Dict[str, int]] = {}
     factors: Dict[tuple, tuple] = {}
-    methods: Dict[tuple, str] = {}
 
-    for sub in candidate_subs:
+    for sub in targets:
         for ctype in ["comments", "submissions"]:
             cache_file = counts_dir / f"{sub.lower()}__{ctype}.json"
             if cache_file.exists():
@@ -303,7 +301,6 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
                     data = json.loads(cache_file.read_text(encoding="utf-8"))
                     counts[(sub, ctype)] = data["counts"]
                     factors[(sub, ctype)] = (float(data["median"]), float(data["valid_rate"]), data.get("factor_source", "cached"))
-                    methods[(sub, ctype)] = data.get("method", "cached")
                     lg.info(f"Loaded cached counts for {sub}/{ctype}")
                     continue
                 except Exception:
@@ -312,7 +309,6 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
             synthetic_counts = {m: 50000 for m in months}
             counts[(sub, ctype)] = synthetic_counts
             factors[(sub, ctype)] = (25.0, 0.85, "synthetic_estimate")
-            methods[(sub, ctype)] = "aggregate:dry_run"
             cache_data = {
                 "subreddit": sub, "content_type": ctype, "counts": synthetic_counts,
                 "median": 25.0, "valid_rate": 0.85, "factor_source": "synthetic_estimate",
@@ -349,14 +345,14 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
             return out
 
         prows = []
-        for sub in candidate_subs:
+        for sub in targets:
             sub_d = {}
             for m in months:
                 tot = sum(int(counts.get((sub, c), {}).get(m, 0) * factors.get((sub, c), (25.0, 0.8))[0] * factors.get((sub, c), (25.0, 0.8))[1]) for c in ["comments", "submissions"])
                 sub_d[m] = tot
             for s, e, t, st, fr, rs, sf, n in freeze_months(sorted(sub_d.items()), 3):
                 mid = f"w2v__{sub.lower()}__{span_id(s, e)}"
-                prows.append([mid, "tracked", sub, s + "-01", e + "-01", "", t, t, st, fr, rs, sf, "aggregate+factors", cfg["config_version"]])
+                prows.append([mid, "tracked" if sub != "ALL_REDDIT" else "all_reddit", sub, s + "-01", e + "-01", "", t, t, st, fr, rs, sf, "aggregate+factors", cfg["config_version"]])
 
         pdef = root / "config/period_definitions.csv"
         pcols = ["model_id", "corpus_type", "subreddit_or_group", "start_date", "end_date", "est_docs", "est_tokens",
@@ -374,14 +370,16 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
 # ==============================================================================
 def run_stream_and_train(root: Path, cfg: dict, lg: logging.Logger, max_periods: Optional[int] = None, dry_run: bool = False, auto_push: bool = False) -> bool:
     """Streams data into local ephemeral scratch, trains Word2Vec models across seeds,
-    exports KeyedVectors, updates manifests, and IMMEDIATELY deletes scratch text.
+    exports KeyedVectors & provenance metadata, and IMMEDIATELY deletes scratch text.
     Zero persistent disk used for raw text.
     """
     lg.info(f"Running Ephemeral Stream-Train-and-Discard Pipeline (dry_run={dry_run})")
     try:
+        import gensim
         from gensim.models import Word2Vec, KeyedVectors
     except ImportError:
         subprocess.check_call([sys.executable, "-m", "pip", "-q", "install", "gensim"])
+        import gensim
         from gensim.models import Word2Vec, KeyedVectors
 
     pdef_path = root / "config/period_definitions.csv"
@@ -481,8 +479,12 @@ def run_stream_and_train(root: Path, cfg: dict, lg: logging.Logger, max_periods:
                         for ws, we in week_bounds(pr["start_date"], pr["end_date"]):
                             after_u, before_u = to_unix(ws), to_unix(we)
                             after = after_u
+                            params = {"after": after, "before": before_u, "limit": 100, "sort": "asc", "fields": "id,created_utc,body,title,selftext"}
+                            if sub != "ALL_REDDIT":
+                                params["subreddit"] = sub
+
                             while True:
-                                r = retry_get(endpoint_map[ctype], params={"subreddit": sub, "after": after, "before": before_u, "limit": 100, "sort": "asc", "fields": "id,created_utc,body,title,selftext"}, tries=4)
+                                r = retry_get(endpoint_map[ctype], params=params, tries=4)
                                 batch = r.json().get("data", [])
                                 if not batch:
                                     break
@@ -508,6 +510,7 @@ def run_stream_and_train(root: Path, cfg: dict, lg: logging.Logger, max_periods:
                                     n_rec += 1
                                     n_tok += len(toks)
                                 after = int(batch[-1].get("created_utc", after)) + 1
+                                params["after"] = after
                                 if len(batch) < 100:
                                     break
 
@@ -550,10 +553,49 @@ def run_stream_and_train(root: Path, cfg: dict, lg: logging.Logger, max_periods:
                 vec_sha = sha256_file(vec_path)
 
                 # Provenance sidecar
+                cfg_sha = sha256_file(root / "config/project_config.yaml")
+                comments_query = f"{endpoint_map['comments']}?after={pr['start_date']}&before={pr['end_date']}&sort=asc"
+                submissions_query = f"{endpoint_map['submissions']}?after={pr['start_date']}&before={pr['end_date']}&sort=asc"
+                if sub != "ALL_REDDIT":
+                    comments_query += f"&subreddit={sub}"
+                    submissions_query += f"&subreddit={sub}"
+
                 nfo = {
-                    "model_id": mid, "seed": seed_val, "spec": {"dim": e["dim"], "window": e["window"]},
-                    "config_version": cfg["config_version"], "vocab_size": len(model.wv),
-                    "train_secs": train_secs, "docs_trained": n_rec, "tokens_trained": n_tok
+                    "model_id": mid,
+                    "subreddit": sub,
+                    "corpus_type": corpus,
+                    "period_span": span,
+                    "date_range": {"start": pr["start_date"], "end": pr["end_date"]},
+                    "replay_query": {
+                        "source": "arctic_shift_api",
+                        "comments_url": comments_query,
+                        "submissions_url": submissions_query,
+                        "sampling_fraction": frac,
+                        "sampling_rule": "sha256(id) mod 10000 < fraction * 10000" if frac < 1.0 else "full_census"
+                    },
+                    "hyperparameters": {
+                        "architecture": "skipgram_word2vec",
+                        "dim": e["dim"],
+                        "window": e["window"],
+                        "negative": e["negative"],
+                        "epochs": total_epochs,
+                        "min_count": e["min_count"],
+                        "subsample": e["subsample"],
+                        "initial_lr": initial_lr,
+                        "seed": seed_val
+                    },
+                    "provenance": {
+                        "config_version": cfg["config_version"],
+                        "config_sha256": cfg_sha,
+                        "trained_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        "train_secs": train_secs,
+                        "docs_trained": n_rec,
+                        "tokens_trained": n_tok,
+                        "vocab_size": len(model.wv),
+                        "corpus_total_words": model.corpus_total_words,
+                        "gensim_version": gensim.__version__,
+                        "python_version": sys.version.split()[0]
+                    }
                 }
                 atomic_write_text(target_mpath.with_suffix(".nfo.json"), json.dumps(nfo, indent=2))
 
@@ -577,7 +619,6 @@ def run_stream_and_train(root: Path, cfg: dict, lg: logging.Logger, max_periods:
             trained_periods += 1
 
         finally:
-            # Clean up ephemeral text scratch file immediately
             if scratch_file.exists():
                 scratch_file.unlink(missing_ok=True)
             if scratch_tmp.exists():
@@ -649,6 +690,10 @@ def run_stage_5(root: Path, cfg: dict, lg: logging.Logger) -> bool:
 # ==============================================================================
 def main():
     parser = argparse.ArgumentParser(description="Reddit Word-Embedding Pipeline Runner")
+    parser.add_argument("--mode", choices=["all_reddit", "subreddit_list"], default="subreddit_list",
+                        help="Target scope: 'all_reddit' (entirety of reddit) or 'subreddit_list' (specific subreddits)")
+    parser.add_argument("--subreddits", type=str, default=None,
+                        help="Comma-separated list of subreddits (e.g. 'AskAcademia,PhD,science')")
     parser.add_argument("--stage", type=int, choices=[0, 1, 2, 3, 4, 5], default=None, help="Run a specific stage")
     parser.add_argument("--stream-train", action="store_true", help="Run ephemeral stream-train-and-discard pipeline (Stages 3+4 combined)")
     parser.add_argument("--dry-run", action="store_true", help="Run with synthetic records offline")
@@ -662,26 +707,39 @@ def main():
     cfg = yaml.safe_load(open(cfg_path, encoding="utf-8"))
     lg = get_logger(root, "pipeline_runner")
 
+    # Resolve target subreddits/scope
+    if args.mode == "all_reddit":
+        targets = ["ALL_REDDIT"]
+    elif args.subreddits:
+        targets = [s.strip() for s in args.subreddits.split(",") if s.strip()]
+    else:
+        sub_list_file = root / "config/subreddit_list.csv"
+        if sub_list_file.exists():
+            rows = [r for r in csv.DictReader(open(sub_list_file, encoding="utf-8")) if r.get("include", "").strip().upper() == "TRUE"]
+            targets = [r["subreddit"] for r in rows] if rows else ["AskAcademia", "PhD", "academia"]
+        else:
+            targets = ["AskAcademia", "PhD", "academia"]
+
     lg.info("=================================================================")
     lg.info(f"Reddit Word-Embedding Pipeline | Config {cfg['config_version']}")
-    lg.info(f"Root: {root} | Dry-Run: {args.dry_run} | Stream-Train: {args.stream_train or args.stage is None}")
+    lg.info(f"Mode: {args.mode.upper()} | Targets ({len(targets)}): {targets}")
+    lg.info(f"Dry-Run: {args.dry_run} | Auto-Commit: {args.auto_commit}")
     lg.info("=================================================================")
 
     if args.stream_train or (args.stage is None):
-        # Default full flow: Setup -> Counts -> Stream-Train-Discard -> Vectors
         run_stage_0(root, cfg, lg)
-        run_stage_1(root, cfg, lg, dry_run=args.dry_run)
-        run_stage_2(root, cfg, lg, freeze=True, dry_run=args.dry_run)
+        run_stage_1(root, cfg, lg, targets=targets, dry_run=args.dry_run)
+        run_stage_2(root, cfg, lg, targets=targets, freeze=True, dry_run=args.dry_run)
         run_stream_and_train(root, cfg, lg, max_periods=args.max_periods, dry_run=args.dry_run, auto_push=args.auto_push)
         run_stage_5(root, cfg, lg)
         if args.auto_commit:
-            git_commit_progress(root, "pipeline_complete", "Completed stream-train pipeline run", push=args.auto_push)
+            git_commit_progress(root, "pipeline_complete", f"Completed run for {args.mode}", push=args.auto_push)
     elif args.stage == 0:
         run_stage_0(root, cfg, lg)
     elif args.stage == 1:
-        run_stage_1(root, cfg, lg, dry_run=args.dry_run)
+        run_stage_1(root, cfg, lg, targets=targets, dry_run=args.dry_run)
     elif args.stage == 2:
-        run_stage_2(root, cfg, lg, freeze=True, dry_run=args.dry_run)
+        run_stage_2(root, cfg, lg, targets=targets, freeze=True, dry_run=args.dry_run)
     elif args.stage in (3, 4):
         run_stream_and_train(root, cfg, lg, max_periods=args.max_periods, dry_run=args.dry_run, auto_push=args.auto_push)
     elif args.stage == 5:
