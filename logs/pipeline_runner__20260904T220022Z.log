@@ -1,0 +1,22 @@
+2026-09-04 22:00:22,994 [INFO] =================================================================
+2026-09-04 22:00:22,994 [INFO] Reddit Word-Embedding Pipeline | Config v0.3.0
+2026-09-04 22:00:22,994 [INFO] Mode: ALL_REDDIT | Targets (1): ['ALL_REDDIT']
+2026-09-04 22:00:22,994 [INFO] Dry-Run: True | Auto-Commit: False
+2026-09-04 22:00:22,994 [INFO] =================================================================
+2026-09-04 22:00:22,994 [INFO] Running Stage 0: Setup & Configuration
+2026-09-04 22:00:22,996 [INFO] Stage 0 complete: Config v0.3.0 (SHA: 480d9daad30f) verified.
+2026-09-04 22:00:22,996 [INFO] Running Stage 1: Data-Access Pilot for targets=['ALL_REDDIT'] (dry_run=True)
+2026-09-04 22:00:23,006 [INFO] Pilot unit OK: asapi__ALL_REDDIT__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1100)
+2026-09-04 22:00:23,015 [INFO] Pilot unit OK: asapi__ALL_REDDIT__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 22:00:23,023 [INFO] Pilot unit OK: asapi__ALL_REDDIT__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1100)
+2026-09-04 22:00:23,031 [INFO] Pilot unit OK: asapi__ALL_REDDIT__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 22:00:23,039 [INFO] Pilot unit OK: asapi__ALL_REDDIT__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1100)
+2026-09-04 22:00:23,047 [INFO] Pilot unit OK: asapi__ALL_REDDIT__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 22:00:23,047 [INFO] Stage 1 pilot finished: done=6, skipped=0, failed=0
+2026-09-04 22:00:23,047 [INFO] Running Stage 2: Counts & Periods for targets=['ALL_REDDIT'] (freeze=True, dry_run=True)
+2026-09-04 22:00:23,050 [INFO] Frozen 2 period rows to /home/user/reddit_embeddings/config/period_definitions.csv
+2026-09-04 22:00:23,050 [INFO] Running Ephemeral Stream-Train-and-Discard Pipeline (dry_run=True)
+2026-09-04 22:00:23,882 [INFO] [1/2] INGEST & TRAIN: w2v__all_reddit__2019q1 (ALL_REDDIT) -> seeds: [1047, 2048, 9182]
+2026-09-04 22:00:23,892 [INFO]   Ingested 400 docs (~6000 tokens, 1.5 KB in scratch)
+2026-09-04 22:00:23,892 [INFO]   Training Word2Vec: w2v__allreddit__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 22:00:23,922 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__all_reddit__2019q1__1788559223882.jsonl.gz (0 KB retained)

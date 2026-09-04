@@ -145,9 +145,19 @@ def test_manifests():
     print("  manifests: PASS")
 
 
+def test_api():
+    print("Testing src.api...")
+    import src.api as api
+    assert hasattr(api, "api_get")
+    assert hasattr(api, "retry_get")
+    assert hasattr(api, "parse_agg")
+    print("  api: PASS")
+
+
 if __name__ == "__main__":
     test_paths()
     test_cleaner()
     test_storage_and_gensim_atomic()
     test_manifests()
+    test_api()
     print("ALL UNIT TESTS PASSED SUCCESSFULLY!")

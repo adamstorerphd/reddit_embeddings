@@ -1,0 +1,38 @@
+2026-09-04 22:01:01,853 [INFO] =================================================================
+2026-09-04 22:01:01,853 [INFO] Reddit Word-Embedding Pipeline | Config v0.3.0
+2026-09-04 22:01:01,853 [INFO] Mode: ALL_REDDIT | Targets (1): ['ALL_REDDIT']
+2026-09-04 22:01:01,854 [INFO] Dry-Run: True | Auto-Commit: False
+2026-09-04 22:01:01,854 [INFO] =================================================================
+2026-09-04 22:01:01,854 [INFO] Running Stage 0: Setup & Configuration
+2026-09-04 22:01:01,856 [INFO] Stage 0 complete: Config v0.3.0 (SHA: 480d9daad30f) verified.
+2026-09-04 22:01:01,856 [INFO] Running Stage 1: Data-Access Pilot for targets=['ALL_REDDIT'] (dry_run=True)
+2026-09-04 22:01:01,857 [INFO] Stage 1 pilot finished: done=0, skipped=6, failed=0
+2026-09-04 22:01:01,857 [INFO] Running Stage 2: Counts & Periods for targets=['ALL_REDDIT'] (freeze=True, dry_run=True)
+2026-09-04 22:01:01,858 [INFO] Loaded cached counts for ALL_REDDIT/comments
+2026-09-04 22:01:01,858 [INFO] Loaded cached counts for ALL_REDDIT/submissions
+2026-09-04 22:01:01,858 [INFO] Frozen 2 period rows to /home/user/reddit_embeddings/config/period_definitions.csv
+2026-09-04 22:01:01,858 [INFO] Running Ephemeral Stream-Train-and-Discard Pipeline (dry_run=True)
+2026-09-04 22:01:02,557 [INFO] [1/2] INGEST & TRAIN: w2v__all_reddit__2019q1 (ALL_REDDIT) -> seeds: [1047, 2048, 9182]
+2026-09-04 22:01:02,567 [INFO]   Ingested 400 docs (~6000 tokens, 1.5 KB in scratch)
+2026-09-04 22:01:02,567 [INFO]   Training Word2Vec: w2v__allreddit__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 22:01:02,603 [INFO]     Complete: w2v__allreddit__2019q1__cfg-v0.3.0__seed-1047.model (vocab=414, secs=0.03)
+2026-09-04 22:01:02,626 [INFO]   Training Word2Vec: w2v__allreddit__2019q1__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 22:01:02,655 [INFO]     Complete: w2v__allreddit__2019q1__cfg-v0.3.0__seed-2048.model (vocab=414, secs=0.03)
+2026-09-04 22:01:02,673 [INFO]   Training Word2Vec: w2v__allreddit__2019q1__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 22:01:02,702 [INFO]     Complete: w2v__allreddit__2019q1__cfg-v0.3.0__seed-9182.model (vocab=414, secs=0.03)
+2026-09-04 22:01:02,721 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__all_reddit__2019q1__1788559262557.jsonl.gz (0 KB retained)
+2026-09-04 22:01:02,721 [INFO] [2/2] INGEST & TRAIN: w2v__all_reddit__2019q2 (ALL_REDDIT) -> seeds: [1047, 2048, 9182]
+2026-09-04 22:01:02,731 [INFO]   Ingested 400 docs (~6000 tokens, 1.5 KB in scratch)
+2026-09-04 22:01:02,731 [INFO]   Training Word2Vec: w2v__allreddit__2019q2__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 22:01:02,760 [INFO]     Complete: w2v__allreddit__2019q2__cfg-v0.3.0__seed-1047.model (vocab=414, secs=0.03)
+2026-09-04 22:01:02,783 [INFO]   Training Word2Vec: w2v__allreddit__2019q2__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 22:01:02,812 [INFO]     Complete: w2v__allreddit__2019q2__cfg-v0.3.0__seed-2048.model (vocab=414, secs=0.03)
+2026-09-04 22:01:02,836 [INFO]   Training Word2Vec: w2v__allreddit__2019q2__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 22:01:02,864 [INFO]     Complete: w2v__allreddit__2019q2__cfg-v0.3.0__seed-9182.model (vocab=414, secs=0.02)
+2026-09-04 22:01:02,889 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__all_reddit__2019q2__1788559262721.jsonl.gz (0 KB retained)
+2026-09-04 22:01:02,889 [INFO] Stream-Train Pipeline complete: 2 new periods trained.
+2026-09-04 22:01:02,889 [INFO] Running Stage 5: Normalize Vectors & Concept Trajectories
+2026-09-04 22:01:02,891 [INFO] Stage 5 complete: summary written to /home/user/reddit_embeddings/RUN_SUMMARY.md
+2026-09-04 22:01:02,891 [INFO] =================================================================
+2026-09-04 22:01:02,891 [INFO] ALL REQUESTED PIPELINE STAGES COMPLETED SUCCESSFULLY!
+2026-09-04 22:01:02,891 [INFO] =================================================================

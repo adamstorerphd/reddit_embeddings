@@ -1,0 +1,89 @@
+2026-09-04 21:32:52,813 [INFO] =================================================================
+2026-09-04 21:32:52,813 [INFO] Reddit Word-Embedding Pipeline | Config v0.3.0
+2026-09-04 21:32:52,814 [INFO] Root: /home/user/reddit_embeddings | Dry-Run: True | Stream-Train: True
+2026-09-04 21:32:52,814 [INFO] =================================================================
+2026-09-04 21:32:52,814 [INFO] Running Stage 0: Setup & Configuration
+2026-09-04 21:32:52,816 [INFO] Stage 0 complete: Config v0.3.0 (SHA: 480d9daad30f) verified.
+2026-09-04 21:32:52,816 [INFO] Running Stage 1: Data-Access Pilot (dry_run=True)
+2026-09-04 21:32:52,826 [INFO] Pilot unit OK: asapi__AskAcademia__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,832 [INFO] Pilot unit OK: asapi__AskAcademia__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,838 [INFO] Pilot unit OK: asapi__AskAcademia__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,844 [INFO] Pilot unit OK: asapi__AskAcademia__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,850 [INFO] Pilot unit OK: asapi__AskAcademia__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,860 [INFO] Pilot unit OK: asapi__AskAcademia__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,867 [INFO] Pilot unit OK: asapi__Academia__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,879 [INFO] Pilot unit OK: asapi__Academia__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,888 [INFO] Pilot unit OK: asapi__Academia__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,897 [INFO] Pilot unit OK: asapi__Academia__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,906 [INFO] Pilot unit OK: asapi__Academia__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,912 [INFO] Pilot unit OK: asapi__Academia__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,918 [INFO] Pilot unit OK: asapi__PhD__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,924 [INFO] Pilot unit OK: asapi__PhD__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,930 [INFO] Pilot unit OK: asapi__PhD__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,937 [INFO] Pilot unit OK: asapi__PhD__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,943 [INFO] Pilot unit OK: asapi__PhD__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,949 [INFO] Pilot unit OK: asapi__PhD__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:32:52,949 [INFO] Stage 1 pilot finished: done=18, skipped=0, failed=0
+2026-09-04 21:32:52,949 [INFO] Running Stage 2: Counts & Periods (freeze=True, dry_run=True)
+2026-09-04 21:32:52,955 [INFO] Frozen 6 period rows to /home/user/reddit_embeddings/config/period_definitions.csv
+2026-09-04 21:32:52,955 [INFO] Running Ephemeral Stream-Train-and-Discard Pipeline (dry_run=True)
+2026-09-04 21:32:53,648 [INFO] [1/6] INGEST & TRAIN: w2v__askacademia__2019q1 (AskAcademia) -> seeds: [1047, 2048, 9182]
+2026-09-04 21:32:53,658 [INFO]   Ingested 400 docs (~5600 tokens, 1.4 KB in scratch)
+2026-09-04 21:32:53,658 [INFO]   Training Word2Vec: w2v__askacademia__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 21:32:53,688 [INFO]     Complete: w2v__askacademia__2019q1__cfg-v0.3.0__seed-1047.model (vocab=413, secs=0.03)
+2026-09-04 21:32:53,717 [INFO]   Training Word2Vec: w2v__askacademia__2019q1__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 21:32:53,750 [INFO]     Complete: w2v__askacademia__2019q1__cfg-v0.3.0__seed-2048.model (vocab=413, secs=0.03)
+2026-09-04 21:32:53,774 [INFO]   Training Word2Vec: w2v__askacademia__2019q1__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 21:32:53,810 [INFO]     Complete: w2v__askacademia__2019q1__cfg-v0.3.0__seed-9182.model (vocab=413, secs=0.03)
+2026-09-04 21:32:53,854 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__askacademia__2019q1__1788557573648.jsonl.gz (0 KB retained)
+2026-09-04 21:32:53,854 [INFO] [2/6] INGEST & TRAIN: w2v__askacademia__2019q2 (AskAcademia) -> seeds: [1047, 2048, 9182]
+2026-09-04 21:32:53,872 [INFO]   Ingested 400 docs (~5600 tokens, 1.4 KB in scratch)
+2026-09-04 21:32:53,872 [INFO]   Training Word2Vec: w2v__askacademia__2019q2__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 21:32:53,912 [INFO]     Complete: w2v__askacademia__2019q2__cfg-v0.3.0__seed-1047.model (vocab=413, secs=0.04)
+2026-09-04 21:32:53,934 [INFO]   Training Word2Vec: w2v__askacademia__2019q2__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 21:32:53,964 [INFO]     Complete: w2v__askacademia__2019q2__cfg-v0.3.0__seed-2048.model (vocab=413, secs=0.03)
+2026-09-04 21:32:53,994 [INFO]   Training Word2Vec: w2v__askacademia__2019q2__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 21:32:54,024 [INFO]     Complete: w2v__askacademia__2019q2__cfg-v0.3.0__seed-9182.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,058 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__askacademia__2019q2__1788557573854.jsonl.gz (0 KB retained)
+2026-09-04 21:32:54,058 [INFO] [3/6] INGEST & TRAIN: w2v__academia__2019q1 (Academia) -> seeds: [1047, 2048, 9182]
+2026-09-04 21:32:54,067 [INFO]   Ingested 400 docs (~5600 tokens, 1.4 KB in scratch)
+2026-09-04 21:32:54,067 [INFO]   Training Word2Vec: w2v__academia__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 21:32:54,097 [INFO]     Complete: w2v__academia__2019q1__cfg-v0.3.0__seed-1047.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,119 [INFO]   Training Word2Vec: w2v__academia__2019q1__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 21:32:54,153 [INFO]     Complete: w2v__academia__2019q1__cfg-v0.3.0__seed-2048.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,188 [INFO]   Training Word2Vec: w2v__academia__2019q1__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 21:32:54,217 [INFO]     Complete: w2v__academia__2019q1__cfg-v0.3.0__seed-9182.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,238 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__academia__2019q1__1788557574058.jsonl.gz (0 KB retained)
+2026-09-04 21:32:54,239 [INFO] [4/6] INGEST & TRAIN: w2v__academia__2019q2 (Academia) -> seeds: [1047, 2048, 9182]
+2026-09-04 21:32:54,248 [INFO]   Ingested 400 docs (~5600 tokens, 1.4 KB in scratch)
+2026-09-04 21:32:54,248 [INFO]   Training Word2Vec: w2v__academia__2019q2__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 21:32:54,278 [INFO]     Complete: w2v__academia__2019q2__cfg-v0.3.0__seed-1047.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,300 [INFO]   Training Word2Vec: w2v__academia__2019q2__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 21:32:54,330 [INFO]     Complete: w2v__academia__2019q2__cfg-v0.3.0__seed-2048.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,353 [INFO]   Training Word2Vec: w2v__academia__2019q2__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 21:32:54,382 [INFO]     Complete: w2v__academia__2019q2__cfg-v0.3.0__seed-9182.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,427 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__academia__2019q2__1788557574239.jsonl.gz (0 KB retained)
+2026-09-04 21:32:54,428 [INFO] [5/6] INGEST & TRAIN: w2v__phd__2019q1 (PhD) -> seeds: [1047, 2048, 9182]
+2026-09-04 21:32:54,443 [INFO]   Ingested 400 docs (~5600 tokens, 1.4 KB in scratch)
+2026-09-04 21:32:54,443 [INFO]   Training Word2Vec: w2v__phd__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 21:32:54,478 [INFO]     Complete: w2v__phd__2019q1__cfg-v0.3.0__seed-1047.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,517 [INFO]   Training Word2Vec: w2v__phd__2019q1__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 21:32:54,551 [INFO]     Complete: w2v__phd__2019q1__cfg-v0.3.0__seed-2048.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,587 [INFO]   Training Word2Vec: w2v__phd__2019q1__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 21:32:54,617 [INFO]     Complete: w2v__phd__2019q1__cfg-v0.3.0__seed-9182.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,653 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__phd__2019q1__1788557574428.jsonl.gz (0 KB retained)
+2026-09-04 21:32:54,654 [INFO] [6/6] INGEST & TRAIN: w2v__phd__2019q2 (PhD) -> seeds: [1047, 2048, 9182]
+2026-09-04 21:32:54,663 [INFO]   Ingested 400 docs (~5600 tokens, 1.4 KB in scratch)
+2026-09-04 21:32:54,663 [INFO]   Training Word2Vec: w2v__phd__2019q2__cfg-v0.3.0__seed-1047 (seed 1047)...
+2026-09-04 21:32:54,692 [INFO]     Complete: w2v__phd__2019q2__cfg-v0.3.0__seed-1047.model (vocab=413, secs=0.02)
+2026-09-04 21:32:54,714 [INFO]   Training Word2Vec: w2v__phd__2019q2__cfg-v0.3.0__seed-2048 (seed 2048)...
+2026-09-04 21:32:54,741 [INFO]     Complete: w2v__phd__2019q2__cfg-v0.3.0__seed-2048.model (vocab=413, secs=0.02)
+2026-09-04 21:32:54,766 [INFO]   Training Word2Vec: w2v__phd__2019q2__cfg-v0.3.0__seed-9182 (seed 9182)...
+2026-09-04 21:32:54,795 [INFO]     Complete: w2v__phd__2019q2__cfg-v0.3.0__seed-9182.model (vocab=413, secs=0.03)
+2026-09-04 21:32:54,829 [INFO]   [SCRATCH CLEANUP] Purged ephemeral__phd__2019q2__1788557574654.jsonl.gz (0 KB retained)
+2026-09-04 21:32:54,830 [INFO] Stream-Train Pipeline complete: 6 new periods trained.
+2026-09-04 21:32:54,830 [INFO] Running Stage 5: Normalize Vectors & Concept Trajectories
+2026-09-04 21:32:54,832 [INFO] Stage 5 complete: summary written to /home/user/reddit_embeddings/RUN_SUMMARY.md
+2026-09-04 21:32:54,833 [INFO] =================================================================
+2026-09-04 21:32:54,833 [INFO] ALL REQUESTED PIPELINE STAGES COMPLETED SUCCESSFULLY!
+2026-09-04 21:32:54,833 [INFO] =================================================================
