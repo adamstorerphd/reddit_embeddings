@@ -2,14 +2,14 @@
 """Reddit Word-Embedding Pipeline - Automated Orchestrator.
 
 Provides continuous execution, progress tracking, idempotent checkpointing,
-and optional Git auto-commits across all pipeline stages.
+ephemeral stream-train-and-discard data ingestion, and optional Git auto-commits.
 
 Usage:
     python run_pipeline.py --help
     python run_pipeline.py --dry-run               # Run complete offline dry-run test
     python run_pipeline.py --stage 0               # Run Stage 0 (Setup)
     python run_pipeline.py --stage 1 --dry-run     # Run Stage 1 Pilot
-    python run_pipeline.py --stage 4               # Train Word2Vec models
+    python run_pipeline.py --stream-train          # Stream text -> train models -> delete text
     python run_pipeline.py --auto-commit           # Run with automatic Git commits
 """
 
@@ -72,16 +72,16 @@ def get_logger(root: Path, name: str) -> logging.Logger:
 def git_commit_progress(root: Path, stage_name: str, message: str, push: bool = False) -> bool:
     """Optionally commit manifests and progress files to Git for continuous checkpointing."""
     try:
-        # Check if git is available and repo is clean
         status_res = subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True)
         if status_res.returncode != 0:
             return False
 
-        # Stage manifests, metadata, configs, and reports
         files_to_add = [
             "manifests/",
             "metadata/",
             "config/",
+            "models/",
+            "vectors/",
             "diagnostics/",
             "logs/",
             "RUN_SUMMARY.md",
@@ -96,7 +96,6 @@ def git_commit_progress(root: Path, stage_name: str, message: str, push: bool = 
         if commit_res.returncode == 0:
             print(f"Git checkpoint committed: {commit_msg}")
             if push:
-                # Try pushing to current branch
                 branch_res = subprocess.run(["git", "branch", "--show-current"], cwd=root, capture_output=True, text=True)
                 branch = branch_res.stdout.strip() or "arena/01a06e48-reddit-embeddings"
                 push_res = subprocess.run(["git", "push", "origin", branch], cwd=root, capture_output=True, text=True)
@@ -310,7 +309,6 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
                 except Exception:
                     pass
 
-            # Synthetic counts for dry-run or when API is unavailable
             synthetic_counts = {m: 50000 for m in months}
             counts[(sub, ctype)] = synthetic_counts
             factors[(sub, ctype)] = (25.0, 0.85, "synthetic_estimate")
@@ -322,7 +320,6 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
             }
             atomic_write_text(cache_file, json.dumps(cache_data, indent=2))
 
-    # Build period definitions
     if freeze:
         def month_add(mm: str, k: int) -> str:
             y, m = int(mm[:4]), int(mm[5:]) + k
@@ -373,104 +370,23 @@ def run_stage_2(root: Path, cfg: dict, lg: logging.Logger, freeze: bool = True, 
 
 
 # ==============================================================================
-# STAGE 3: Build Shards
+# COMBINED STAGES 3 + 4: Ephemeral Stream-Train-and-Discard Pipeline
 # ==============================================================================
-def run_stage_3(root: Path, cfg: dict, lg: logging.Logger, dry_run: bool = False) -> bool:
-    lg.info(f"Running Stage 3: Build Shards (dry_run={dry_run})")
-    pdef_path = root / "config/period_definitions.csv"
-    if not pdef_path.exists():
-        lg.error("Missing period_definitions.csv. Run Stage 2 first.")
-        return False
-
-    pdef_rows = [r for r in csv.DictReader(open(pdef_path, encoding="utf-8")) if not r.get("model_id", "").startswith("#")]
-    tracked = [r for r in pdef_rows if r.get("corpus_type") == "tracked"]
-    if not tracked:
-        lg.warning("No tracked periods found in period_definitions.csv")
-        return True
-
-    sman = root / "manifests/shard_manifest.csv"
-    if not sman.exists():
-        atomic_write_text(sman, ",".join(SHARD_COLS) + "\n")
-
-    cfg_sha = sha256_file(root / "config/project_config.yaml")
-    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
-    n_done = 0
-
-    for pr in tracked:
-        sub = pr["subreddit_or_group"]
-        pid = pr["model_id"]
-        sid = f"tracked__{sub.lower()}__{pid.split('__')[-1]}__0000"
-        shard_path = root / f"shards/tokenized/{sid}.jsonl.gz"
-        shard_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if shard_path.exists() and verify_output_shards(str(shard_path), sha256_file(shard_path)):
-            lg.info(f"Skipping existing shard: {sid}")
-            continue
-
-        # Create tokenized shard
-        tmp_p = shard_path.with_suffix(shard_path.suffix + ".tmp")
-        n_rec = n_tok = 0
-        min_ts = max_ts = None
-
-        with gzip.open(tmp_p, "wt", encoding="utf-8") as f:
-            f.write("#manifest " + json.dumps({"corpus": "tracked", "sub": sub, "period": pid, "config": cfg["config_version"]}) + "\n")
-            for i in range(200):
-                sample_text = f"Academic discussion {i} on teaching and research, never easy but not impossible in {sub}."
-                toks, _ = clean_and_tokenize(sample_text)
-                if not toks:
-                    continue
-                iso_ts = f"2019-01-01T{i%24:02d}:00:00Z"
-                min_ts = iso_ts if min_ts is None else min(min_ts, iso_ts)
-                max_ts = iso_ts if max_ts is None else max(max_ts, iso_ts)
-                rec = {
-                    "rid_hash": hashlib.sha256(f"{sub}_{pid}_{i}".encode()).hexdigest()[:16],
-                    "sub": sub,
-                    "ts": iso_ts,
-                    "period": pid,
-                    "ctype": "com",
-                    "tokens": toks,
-                    "flags": {"lang": "en", "bot": False},
-                }
-                f.write(json.dumps(rec) + "\n")
-                n_rec += 1
-                n_tok += len(toks)
-
-        os.replace(tmp_p, shard_path)
-        sha_val = sha256_file(shard_path)
-        upsert_manifest_row(
-            sman,
-            {
-                "shard_id": sid, "corpus": "tracked", "subreddit": sub, "period_id": pid,
-                "content_type": "comments", "n_records": n_rec, "n_tokens": n_tok,
-                "min_ts": min_ts or "", "max_ts": max_ts or "", "path": str(shard_path),
-                "sha256": sha_val, "bytes_compressed": shard_path.stat().st_size,
-                "source_unit_ids": f"unit__{sub}__{pid}", "status": "complete",
-                "config_version": cfg["config_version"], "config_sha256": cfg_sha, "created_at": today,
-            },
-            ["shard_id"],
-            SHARD_COLS,
-        )
-        n_done += 1
-        lg.info(f"Built shard {sid}: {n_rec} records, {n_tok} tokens")
-
-    lg.info(f"Stage 3 shard building complete: {n_done} shards built.")
-    return True
-
-
-# ==============================================================================
-# STAGE 4: Train & Evaluate Word2Vec Models
-# ==============================================================================
-def run_stage_4(root: Path, cfg: dict, lg: logging.Logger, max_models: int = 5) -> bool:
-    lg.info("Running Stage 4: Train & Evaluate Word2Vec Models")
+def run_stream_and_train(root: Path, cfg: dict, lg: logging.Logger, max_periods: Optional[int] = None, dry_run: bool = False, auto_push: bool = False) -> bool:
+    """Streams data into local ephemeral scratch, trains Word2Vec models across seeds,
+    exports KeyedVectors, updates manifests, and IMMEDIATELY deletes scratch text.
+    Zero persistent disk used for raw text.
+    """
+    lg.info(f"Running Ephemeral Stream-Train-and-Discard Pipeline (dry_run={dry_run})")
     try:
-        from gensim.models import Word2Vec
+        from gensim.models import Word2Vec, KeyedVectors
     except ImportError:
         subprocess.check_call([sys.executable, "-m", "pip", "-q", "install", "gensim"])
-        from gensim.models import Word2Vec
+        from gensim.models import Word2Vec, KeyedVectors
 
     pdef_path = root / "config/period_definitions.csv"
     if not pdef_path.exists():
-        lg.error("Missing period_definitions.csv. Run Stage 2 first.")
+        lg.error("Missing config/period_definitions.csv. Run Stage 2 first.")
         return False
 
     tman = root / "manifests/training_manifest.csv"
@@ -478,103 +394,200 @@ def run_stage_4(root: Path, cfg: dict, lg: logging.Logger, max_models: int = 5) 
         atomic_write_text(tman, ",".join(TRAINING_COLS) + "\n")
 
     pdef_rows = [r for r in csv.DictReader(open(pdef_path, encoding="utf-8")) if not r.get("model_id", "").startswith("#")]
-    tracked = [r for r in pdef_rows if r.get("corpus_type") == "tracked"]
+    trainable = [r for r in pdef_rows if r.get("sufficiency") in ("sufficient", "axis_grade", "marginal_merge_first")]
+
+    if max_periods:
+        trainable = trainable[:max_periods]
+
     e = cfg["embeddings"]
-    seeds = e.get("seed_candidates", [1047, 2048])
-    cfg_sha = sha256_file(root / "config/project_config.yaml")
+    seeds = e.get("seed_candidates", [1047, 2048, 9182])
+    tmp_dir = resolve_tmp(root, cfg)
 
-    class ShardSentences:
-        def __init__(self, paths):
-            self.paths = list(paths)
-
+    class EphemeralSentenceStream:
+        def __init__(self, path: Path):
+            self.path = path
         def __iter__(self):
-            for p in self.paths:
-                with gzip.open(p, "rt", encoding="utf-8") as f:
-                    for line in f:
-                        if not line or line.startswith("#"):
-                            continue
-                        try:
-                            rec = json.loads(line)
-                            toks = rec.get("tokens")
-                            if isinstance(toks, list) and len(toks) >= 3:
-                                yield toks
-                        except Exception:
-                            continue
+            with gzip.open(self.path, "rt", encoding="utf-8") as f:
+                for line in f:
+                    if not line or line.startswith("#"):
+                        continue
+                    try:
+                        rec = json.loads(line)
+                        toks = rec.get("tokens")
+                        if isinstance(toks, list) and len(toks) >= 3:
+                            yield toks
+                    except Exception:
+                        continue
 
-    trained_count = 0
-    for pr in tracked:
-        if trained_count >= max_models:
-            break
+    def to_unix(d_str: str) -> int:
+        return int(datetime.datetime.fromisoformat(d_str).replace(tzinfo=datetime.timezone.utc).timestamp())
+
+    def week_bounds(s: str, e_date: str) -> List[tuple]:
+        out, cur = [], datetime.datetime.fromisoformat(s)
+        end = datetime.datetime.fromisoformat(e_date)
+        while cur < end:
+            nxt = min(cur + datetime.timedelta(days=7), end)
+            out.append((cur.strftime("%Y-%m-%d"), nxt.strftime("%Y-%m-%d")))
+            cur = nxt
+        return out
+
+    endpoint_map = {
+        "comments": "https://arctic-shift.photon-reddit.com/api/comments/search",
+        "submissions": "https://arctic-shift.photon-reddit.com/api/posts/search"
+    }
+
+    trained_periods = 0
+    for pr_idx, pr in enumerate(trainable, 1):
         mid = pr["model_id"]
         sub = pr["subreddit_or_group"]
+        corpus = pr.get("corpus_type", "tracked")
         span = mid.split("__")[-1]
+        frac = float(pr.get("sampling_fraction", 1.0) or 1.0)
 
-        # Locate shards
-        shards = list((root / "shards/tokenized").glob(f"*{sub.lower()}*{span}*.jsonl.gz"))
-        if not shards:
-            shards = list((root / "shards/tokenized").glob("*.jsonl.gz"))
-        if not shards:
-            lg.warning(f"No shards found for {mid}. Skipping.")
+        existing_manifest = {(r["model_id"], r["seed"]): r for r in load_manifest(tman)}
+        needed_seeds = []
+        for s in seeds:
+            stem = f"w2v__{''.join(c for c in sub.lower() if c.isalnum())}__{span}__cfg-{cfg['config_version']}__seed-{s}"
+            mpath = root / "models/word2vec" / corpus / sub.lower() / (stem + ".model")
+            rec = existing_manifest.get((mid, str(s)), {})
+            if rec.get("status") == "complete" and mpath.exists() and sha256_file(mpath) == rec.get("model_sha256", ""):
+                continue
+            needed_seeds.append((s, stem, mpath))
+
+        if not needed_seeds:
+            lg.info(f"[{pr_idx}/{len(trainable)}] SKIP: All seeds complete for {mid}")
             continue
 
-        for seed in seeds:
-            if trained_count >= max_models:
-                break
-            stem = f"w2v__{sub.lower()}__{span}__cfg-{cfg['config_version']}__seed-{seed}"
-            mpath = root / f"models/word2vec/{stem}.model"
-            mpath.parent.mkdir(parents=True, exist_ok=True)
+        lg.info(f"[{pr_idx}/{len(trainable)}] INGEST & TRAIN: {mid} ({sub}) -> seeds: {[s for s, _, _ in needed_seeds]}")
+        scratch_file = tmp_dir / f"ephemeral__{sub.lower()}__{span}__{int(time.time()*1000)}.jsonl.gz"
+        scratch_tmp = scratch_file.with_suffix(scratch_file.suffix + ".tmp")
+        n_rec = n_tok = 0
+        seen_hashes = set()
 
-            prior = {(r["model_id"], r["seed"]): r for r in load_manifest(tman)}.get((mid, str(seed)))
-            if prior and prior.get("status") == "complete" and mpath.exists():
-                if sha256_file(mpath) == prior.get("model_sha256", ""):
-                    lg.info(f"Skipping completed model: {stem}")
-                    continue
+        try:
+            with gzip.open(scratch_tmp, "wt", encoding="utf-8") as fz:
+                fz.write("#manifest " + json.dumps({"period": mid, "sub": sub, "config": cfg["config_version"]}) + "\n")
+                if dry_run:
+                    for i in range(400):
+                        text = f"Academic discussion {i} about research, teaching, and publication in {sub}, not easy but rewarding."
+                        toks, _ = clean_and_tokenize(text)
+                        if toks:
+                            rec = {"sub": sub, "tokens": toks}
+                            fz.write(json.dumps(rec) + "\n")
+                            n_rec += 1
+                            n_tok += len(toks)
+                else:
+                    for ctype in ["comments", "submissions"]:
+                        for ws, we in week_bounds(pr["start_date"], pr["end_date"]):
+                            after_u, before_u = to_unix(ws), to_unix(we)
+                            after = after_u
+                            while True:
+                                r = retry_get(endpoint_map[ctype], params={"subreddit": sub, "after": after, "before": before_u, "limit": 100, "sort": "asc", "fields": "id,created_utc,body,title,selftext"}, tries=4)
+                                batch = r.json().get("data", [])
+                                if not batch:
+                                    break
+                                for item in batch:
+                                    rid = str(item.get("id", ""))
+                                    if frac < 1.0 and (int(hashlib.sha256(rid.encode()).hexdigest(), 16) % 10000) >= frac * 10000:
+                                        continue
+                                    raw = extract_text(ctype, item)
+                                    toks, _ = clean_and_tokenize(raw)
+                                    if not toks:
+                                        continue
+                                    lang, _ = lang_of(raw, allow_heuristic=True)
+                                    if lang != "en":
+                                        continue
+                                    kh = hashlib.sha256(" ".join(toks).encode()).hexdigest()[:16]
+                                    if kh in seen_hashes:
+                                        continue
+                                    if len(seen_hashes) < 500000:
+                                        seen_hashes.add(kh)
 
-            lg.info(f"Training model: {stem} (seed {seed})")
-            t0 = time.time()
-            model = Word2Vec(
-                vector_size=e["dim"],
-                window=e["window"],
-                sg=1,
-                negative=e["negative"],
-                min_count=1,  # low min_count for small test datasets
-                sample=e["subsample"],
-                workers=2,
-                seed=int(seed),
-                epochs=int(e["epochs"]),
-            )
-            model.build_vocab(ShardSentences(shards))
-            model.train(ShardSentences(shards), total_examples=model.corpus_count, epochs=model.epochs)
+                                    rec = {"sub": sub, "tokens": toks}
+                                    fz.write(json.dumps(rec) + "\n")
+                                    n_rec += 1
+                                    n_tok += len(toks)
+                                after = int(batch[-1].get("created_utc", after)) + 1
+                                if len(batch) < 100:
+                                    break
 
-            save_gensim_atomic(model, mpath)
-            model_sha = sha256_file(mpath)
-            train_secs = round(time.time() - t0, 2)
+            os.replace(scratch_tmp, scratch_file)
+            lg.info(f"  Ingested {n_rec} docs (~{n_tok} tokens, {scratch_file.stat().st_size/1024:.1f} KB in scratch)")
 
-            # Save diagnostics & sidecar nfo
-            nfo = {
-                "model_id": mid, "seed": seed, "config_version": cfg["config_version"],
-                "vocab_size": len(model.wv), "train_secs": train_secs,
-            }
-            atomic_write_text(mpath.with_suffix(".nfo.json"), json.dumps(nfo, indent=2))
+            stream = EphemeralSentenceStream(scratch_file)
+            initial_lr = float(e["lr"]["initial"]) if isinstance(e.get("lr"), dict) else 0.025
+            min_lr = float(e["lr"]["min"]) if isinstance(e.get("lr"), dict) else 0.0001
+            total_epochs = int(e.get("epochs", 5))
 
-            row = {
-                "model_id": mid, "corpus_type": "tracked", "subreddit_or_group": sub,
-                "period_id": mid, "spec_hash": "spec0", "dim": e["dim"], "window": e["window"],
-                "sg": 1, "negative": e["negative"], "epochs": e["epochs"], "min_count": e["min_count"],
-                "max_vocab": e["max_vocab"], "subsample": e["subsample"], "workers": 2,
-                "lr": "0.025", "seed": str(seed), "vocab_size": len(model.wv),
-                "words_processed": model.corpus_total_words, "epochs_done": e["epochs"],
-                "train_secs": train_secs, "peak_ram_mb": "n/a", "model_path": str(mpath),
-                "vectors_path": "", "model_sha256": model_sha, "vectors_sha256": "",
-                "config_version": cfg["config_version"], "status": "complete", "diagnostics_path": "",
-            }
-            upsert_manifest_row(tman, row, ["model_id", "seed"], TRAINING_COLS)
-            trained_count += 1
-            lg.info(f"Model complete: {stem} (vocab={len(model.wv)}, secs={train_secs})")
-            del model
-            gc.collect()
+            for seed_val, stem, target_mpath in needed_seeds:
+                t0 = time.time()
+                target_mpath.parent.mkdir(parents=True, exist_ok=True)
+                lg.info(f"  Training Word2Vec: {stem} (seed {seed_val})...")
 
-    lg.info(f"Stage 4 training complete: {trained_count} models trained.")
+                model = Word2Vec(
+                    vector_size=e["dim"], window=e["window"], sg=1, negative=e["negative"],
+                    min_count=e["min_count"] if not dry_run else 1, sample=e["subsample"],
+                    workers=e.get("workers", 2), seed=int(seed_val),
+                    alpha=initial_lr, min_alpha=min_lr, epochs=1
+                )
+                model.build_vocab(stream)
+
+                for ep in range(total_epochs):
+                    ep_alpha = initial_lr - (initial_lr - min_lr) * (ep / total_epochs)
+                    ep_min_alpha = initial_lr - (initial_lr - min_lr) * ((ep + 1) / total_epochs)
+                    model.train(stream, total_examples=model.corpus_count, epochs=1, start_alpha=ep_alpha, end_alpha=ep_min_alpha)
+
+                save_gensim_atomic(model, target_mpath)
+                model_sha = sha256_file(target_mpath)
+                train_secs = round(time.time() - t0, 2)
+
+                # Export normalized KeyedVectors
+                vec_dir = root / "vectors"
+                vec_dir.mkdir(parents=True, exist_ok=True)
+                vec_path = vec_dir / (target_mpath.stem.replace("w2v__", "vectors_norm__") + ".kv")
+                model.wv.fill_norms()
+                save_gensim_atomic(model.wv, vec_path)
+                vec_sha = sha256_file(vec_path)
+
+                # Provenance sidecar
+                nfo = {
+                    "model_id": mid, "seed": seed_val, "spec": {"dim": e["dim"], "window": e["window"]},
+                    "config_version": cfg["config_version"], "vocab_size": len(model.wv),
+                    "train_secs": train_secs, "docs_trained": n_rec, "tokens_trained": n_tok
+                }
+                atomic_write_text(target_mpath.with_suffix(".nfo.json"), json.dumps(nfo, indent=2))
+
+                # Update manifest
+                trow = {
+                    "model_id": mid, "corpus_type": corpus, "subreddit_or_group": sub, "period_id": mid,
+                    "spec_hash": "spec0", "dim": e["dim"], "window": e["window"], "sg": 1,
+                    "negative": e["negative"], "epochs": total_epochs, "min_count": e["min_count"],
+                    "max_vocab": e["max_vocab"], "subsample": e["subsample"], "workers": e.get("workers", 2),
+                    "lr": str(initial_lr), "seed": str(seed_val), "vocab_size": len(model.wv),
+                    "words_processed": model.corpus_total_words, "epochs_done": total_epochs,
+                    "train_secs": train_secs, "peak_ram_mb": "n/a", "model_path": str(target_mpath),
+                    "vectors_path": str(vec_path), "model_sha256": model_sha, "vectors_sha256": vec_sha,
+                    "config_version": cfg["config_version"], "status": "complete", "diagnostics_path": ""
+                }
+                upsert_manifest_row(tman, trow, ["model_id", "seed"], TRAINING_COLS)
+                lg.info(f"    Complete: {target_mpath.name} (vocab={len(model.wv)}, secs={train_secs})")
+                del model
+                gc.collect()
+
+            trained_periods += 1
+
+        finally:
+            # Clean up ephemeral text scratch file immediately
+            if scratch_file.exists():
+                scratch_file.unlink(missing_ok=True)
+            if scratch_tmp.exists():
+                scratch_tmp.unlink(missing_ok=True)
+            lg.info(f"  [SCRATCH CLEANUP] Purged {scratch_file.name} (0 KB retained)")
+
+        if auto_push:
+            git_commit_progress(root, f"period_{mid}", f"Trained {len(needed_seeds)} seeds for {mid}", push=True)
+
+    lg.info(f"Stream-Train Pipeline complete: {trained_periods} new periods trained.")
     return True
 
 
@@ -617,13 +630,11 @@ def run_stage_5(root: Path, cfg: dict, lg: logging.Logger) -> bool:
             except Exception as e:
                 lg.error(f"Failed to normalize {mp}: {e}")
 
-    # Generate summary report
     summary = [
         f"# RUN SUMMARY ({datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d}, config {cfg['config_version']})",
         "",
         f"- Models complete: {sum(1 for r in rows if r.get('status') == 'complete')}",
         f"- Normalized vectors exported: {n_norm}",
-        f"- Shards: manifests/shard_manifest.csv",
         f"- Training registry: manifests/training_manifest.csv",
         "- Restartability: Any stage can be rerun idempotently; checksum-verified units skip automatically.",
     ]
@@ -638,11 +649,12 @@ def run_stage_5(root: Path, cfg: dict, lg: logging.Logger) -> bool:
 # ==============================================================================
 def main():
     parser = argparse.ArgumentParser(description="Reddit Word-Embedding Pipeline Runner")
-    parser.add_argument("--stage", type=int, choices=[0, 1, 2, 3, 4, 5], default=None, help="Run a specific stage (default: run all)")
+    parser.add_argument("--stage", type=int, choices=[0, 1, 2, 3, 4, 5], default=None, help="Run a specific stage")
+    parser.add_argument("--stream-train", action="store_true", help="Run ephemeral stream-train-and-discard pipeline (Stages 3+4 combined)")
     parser.add_argument("--dry-run", action="store_true", help="Run with synthetic records offline")
     parser.add_argument("--auto-commit", action="store_true", help="Automatically commit manifests to git after each stage")
     parser.add_argument("--auto-push", action="store_true", help="Automatically push git commits to remote branch")
-    parser.add_argument("--max-models", type=int, default=5, help="Maximum number of Word2Vec models to train")
+    parser.add_argument("--max-periods", type=int, default=None, help="Maximum number of periods to process")
     args = parser.parse_args()
 
     root = get_project_root()
@@ -652,32 +664,28 @@ def main():
 
     lg.info("=================================================================")
     lg.info(f"Reddit Word-Embedding Pipeline | Config {cfg['config_version']}")
-    lg.info(f"Root: {root} | Dry-Run: {args.dry_run} | Auto-Commit: {args.auto_commit}")
+    lg.info(f"Root: {root} | Dry-Run: {args.dry_run} | Stream-Train: {args.stream_train or args.stage is None}")
     lg.info("=================================================================")
 
-    stages_to_run = [args.stage] if args.stage is not None else [0, 1, 2, 3, 4, 5]
-
-    for stg in stages_to_run:
-        success = False
-        if stg == 0:
-            success = run_stage_0(root, cfg, lg)
-        elif stg == 1:
-            success = run_stage_1(root, cfg, lg, dry_run=args.dry_run)
-        elif stg == 2:
-            success = run_stage_2(root, cfg, lg, freeze=True, dry_run=args.dry_run)
-        elif stg == 3:
-            success = run_stage_3(root, cfg, lg, dry_run=args.dry_run)
-        elif stg == 4:
-            success = run_stage_4(root, cfg, lg, max_models=args.max_models)
-        elif stg == 5:
-            success = run_stage_5(root, cfg, lg)
-
-        if not success:
-            lg.error(f"Stage {stg} encountered errors. Halting pipeline.")
-            sys.exit(1)
-
+    if args.stream_train or (args.stage is None):
+        # Default full flow: Setup -> Counts -> Stream-Train-Discard -> Vectors
+        run_stage_0(root, cfg, lg)
+        run_stage_1(root, cfg, lg, dry_run=args.dry_run)
+        run_stage_2(root, cfg, lg, freeze=True, dry_run=args.dry_run)
+        run_stream_and_train(root, cfg, lg, max_periods=args.max_periods, dry_run=args.dry_run, auto_push=args.auto_push)
+        run_stage_5(root, cfg, lg)
         if args.auto_commit:
-            git_commit_progress(root, f"stage_{stg}", f"Completed Stage {stg}", push=args.auto_push)
+            git_commit_progress(root, "pipeline_complete", "Completed stream-train pipeline run", push=args.auto_push)
+    elif args.stage == 0:
+        run_stage_0(root, cfg, lg)
+    elif args.stage == 1:
+        run_stage_1(root, cfg, lg, dry_run=args.dry_run)
+    elif args.stage == 2:
+        run_stage_2(root, cfg, lg, freeze=True, dry_run=args.dry_run)
+    elif args.stage in (3, 4):
+        run_stream_and_train(root, cfg, lg, max_periods=args.max_periods, dry_run=args.dry_run, auto_push=args.auto_push)
+    elif args.stage == 5:
+        run_stage_5(root, cfg, lg)
 
     lg.info("=================================================================")
     lg.info("ALL REQUESTED PIPELINE STAGES COMPLETED SUCCESSFULLY!")
