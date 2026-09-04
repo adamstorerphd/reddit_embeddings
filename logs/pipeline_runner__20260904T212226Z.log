@@ -1,0 +1,58 @@
+2026-09-04 21:22:26,552 [INFO] =================================================================
+2026-09-04 21:22:26,552 [INFO] Reddit Word-Embedding Pipeline | Config v0.3.0
+2026-09-04 21:22:26,552 [INFO] Root: /home/user/reddit_embeddings | Dry-Run: True | Auto-Commit: False
+2026-09-04 21:22:26,552 [INFO] =================================================================
+2026-09-04 21:22:26,552 [INFO] Running Stage 0: Setup & Configuration
+2026-09-04 21:22:26,555 [INFO] Stage 0 complete: Config v0.3.0 (SHA: 480d9daad30f) verified.
+2026-09-04 21:22:26,555 [INFO] Running Stage 1: Data-Access Pilot (dry_run=True)
+2026-09-04 21:22:26,561 [INFO] Pilot unit OK: asapi__AskAcademia__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,566 [INFO] Pilot unit OK: asapi__AskAcademia__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,573 [INFO] Pilot unit OK: asapi__AskAcademia__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,578 [INFO] Pilot unit OK: asapi__AskAcademia__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,584 [INFO] Pilot unit OK: asapi__AskAcademia__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,590 [INFO] Pilot unit OK: asapi__AskAcademia__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,596 [INFO] Pilot unit OK: asapi__Academia__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,602 [INFO] Pilot unit OK: asapi__Academia__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,608 [INFO] Pilot unit OK: asapi__Academia__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,614 [INFO] Pilot unit OK: asapi__Academia__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,622 [INFO] Pilot unit OK: asapi__Academia__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,629 [INFO] Pilot unit OK: asapi__Academia__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,637 [INFO] Pilot unit OK: asapi__PhD__comments__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,643 [INFO] Pilot unit OK: asapi__PhD__submissions__2015-06-01_2015-06-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,649 [INFO] Pilot unit OK: asapi__PhD__comments__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,654 [INFO] Pilot unit OK: asapi__PhD__submissions__2019-01-01_2019-01-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,660 [INFO] Pilot unit OK: asapi__PhD__comments__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,666 [INFO] Pilot unit OK: asapi__PhD__submissions__2023-07-01_2023-07-08 (read=100, usable=100, tokens=1000)
+2026-09-04 21:22:26,666 [INFO] Stage 1 pilot finished: done=18, skipped=0, failed=0
+2026-09-04 21:22:26,666 [INFO] Running Stage 2: Counts & Periods (freeze=True, dry_run=True)
+2026-09-04 21:22:26,671 [INFO] Frozen 6 period rows to /home/user/reddit_embeddings/config/period_definitions.csv
+2026-09-04 21:22:26,671 [INFO] Running Stage 3: Build Shards (dry_run=True)
+2026-09-04 21:22:26,680 [INFO] Built shard tracked__askacademia__2019q1__0000: 200 records, 2800 tokens
+2026-09-04 21:22:26,688 [INFO] Built shard tracked__askacademia__2019q2__0000: 200 records, 2800 tokens
+2026-09-04 21:22:26,696 [INFO] Built shard tracked__academia__2019q1__0000: 200 records, 2800 tokens
+2026-09-04 21:22:26,703 [INFO] Built shard tracked__academia__2019q2__0000: 200 records, 2800 tokens
+2026-09-04 21:22:26,712 [INFO] Built shard tracked__phd__2019q1__0000: 200 records, 2800 tokens
+2026-09-04 21:22:26,719 [INFO] Built shard tracked__phd__2019q2__0000: 200 records, 2800 tokens
+2026-09-04 21:22:26,719 [INFO] Stage 3 shard building complete: 6 shards built.
+2026-09-04 21:22:26,720 [INFO] Running Stage 4: Train & Evaluate Word2Vec Models
+2026-09-04 21:22:27,413 [INFO] Training model: w2v__askacademia__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)
+2026-09-04 21:22:27,435 [INFO] Model complete: w2v__askacademia__2019q1__cfg-v0.3.0__seed-1047 (vocab=213, secs=0.02)
+2026-09-04 21:22:27,464 [INFO] Training model: w2v__askacademia__2019q1__cfg-v0.3.0__seed-2048 (seed 2048)
+2026-09-04 21:22:27,485 [INFO] Model complete: w2v__askacademia__2019q1__cfg-v0.3.0__seed-2048 (vocab=213, secs=0.02)
+2026-09-04 21:22:27,511 [INFO] Training model: w2v__askacademia__2019q1__cfg-v0.3.0__seed-9182 (seed 9182)
+2026-09-04 21:22:27,534 [INFO] Model complete: w2v__askacademia__2019q1__cfg-v0.3.0__seed-9182 (vocab=213, secs=0.02)
+2026-09-04 21:22:27,558 [INFO] Training model: w2v__askacademia__2019q2__cfg-v0.3.0__seed-1047 (seed 1047)
+2026-09-04 21:22:27,578 [INFO] Model complete: w2v__askacademia__2019q2__cfg-v0.3.0__seed-1047 (vocab=213, secs=0.02)
+2026-09-04 21:22:27,608 [INFO] Training model: w2v__askacademia__2019q2__cfg-v0.3.0__seed-2048 (seed 2048)
+2026-09-04 21:22:27,630 [INFO] Model complete: w2v__askacademia__2019q2__cfg-v0.3.0__seed-2048 (vocab=213, secs=0.02)
+2026-09-04 21:22:27,651 [INFO] Stage 4 training complete: 5 models trained.
+2026-09-04 21:22:27,651 [INFO] Running Stage 5: Normalize Vectors & Concept Trajectories
+2026-09-04 21:22:27,656 [INFO] Normalized vectors exported: vectors_norm__askacademia__2019q1__cfg-v0.3.0__seed-1047.kv
+2026-09-04 21:22:27,674 [INFO] Normalized vectors exported: vectors_norm__askacademia__2019q1__cfg-v0.3.0__seed-2048.kv
+2026-09-04 21:22:27,693 [INFO] Normalized vectors exported: vectors_norm__askacademia__2019q1__cfg-v0.3.0__seed-9182.kv
+2026-09-04 21:22:27,713 [INFO] Normalized vectors exported: vectors_norm__askacademia__2019q2__cfg-v0.3.0__seed-1047.kv
+2026-09-04 21:22:27,734 [INFO] Normalized vectors exported: vectors_norm__askacademia__2019q2__cfg-v0.3.0__seed-2048.kv
+2026-09-04 21:22:27,753 [INFO] Stage 5 complete: summary written to /home/user/reddit_embeddings/RUN_SUMMARY.md
+2026-09-04 21:22:27,753 [INFO] =================================================================
+2026-09-04 21:22:27,753 [INFO] ALL REQUESTED PIPELINE STAGES COMPLETED SUCCESSFULLY!
+2026-09-04 21:22:27,753 [INFO] =================================================================

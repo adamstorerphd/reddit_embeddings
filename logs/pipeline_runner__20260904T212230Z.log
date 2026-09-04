@@ -1,0 +1,51 @@
+2026-09-04 21:22:30,533 [INFO] =================================================================
+2026-09-04 21:22:30,533 [INFO] Reddit Word-Embedding Pipeline | Config v0.3.0
+2026-09-04 21:22:30,533 [INFO] Root: /home/user/reddit_embeddings | Dry-Run: True | Auto-Commit: False
+2026-09-04 21:22:30,533 [INFO] =================================================================
+2026-09-04 21:22:30,533 [INFO] Running Stage 0: Setup & Configuration
+2026-09-04 21:22:30,534 [INFO] Stage 0 complete: Config v0.3.0 (SHA: 480d9daad30f) verified.
+2026-09-04 21:22:30,535 [INFO] Running Stage 1: Data-Access Pilot (dry_run=True)
+2026-09-04 21:22:30,538 [INFO] Stage 1 pilot finished: done=0, skipped=18, failed=0
+2026-09-04 21:22:30,538 [INFO] Running Stage 2: Counts & Periods (freeze=True, dry_run=True)
+2026-09-04 21:22:30,539 [INFO] Loaded cached counts for AskAcademia/comments
+2026-09-04 21:22:30,539 [INFO] Loaded cached counts for AskAcademia/submissions
+2026-09-04 21:22:30,539 [INFO] Loaded cached counts for Academia/comments
+2026-09-04 21:22:30,539 [INFO] Loaded cached counts for Academia/submissions
+2026-09-04 21:22:30,539 [INFO] Loaded cached counts for PhD/comments
+2026-09-04 21:22:30,539 [INFO] Loaded cached counts for PhD/submissions
+2026-09-04 21:22:30,540 [INFO] Frozen 6 period rows to /home/user/reddit_embeddings/config/period_definitions.csv
+2026-09-04 21:22:30,540 [INFO] Running Stage 3: Build Shards (dry_run=True)
+2026-09-04 21:22:30,540 [INFO] Skipping existing shard: tracked__askacademia__2019q1__0000
+2026-09-04 21:22:30,540 [INFO] Skipping existing shard: tracked__askacademia__2019q2__0000
+2026-09-04 21:22:30,541 [INFO] Skipping existing shard: tracked__academia__2019q1__0000
+2026-09-04 21:22:30,541 [INFO] Skipping existing shard: tracked__academia__2019q2__0000
+2026-09-04 21:22:30,541 [INFO] Skipping existing shard: tracked__phd__2019q1__0000
+2026-09-04 21:22:30,541 [INFO] Skipping existing shard: tracked__phd__2019q2__0000
+2026-09-04 21:22:30,541 [INFO] Stage 3 shard building complete: 0 shards built.
+2026-09-04 21:22:30,541 [INFO] Running Stage 4: Train & Evaluate Word2Vec Models
+2026-09-04 21:22:31,263 [INFO] Skipping completed model: w2v__askacademia__2019q1__cfg-v0.3.0__seed-1047
+2026-09-04 21:22:31,264 [INFO] Skipping completed model: w2v__askacademia__2019q1__cfg-v0.3.0__seed-2048
+2026-09-04 21:22:31,265 [INFO] Skipping completed model: w2v__askacademia__2019q1__cfg-v0.3.0__seed-9182
+2026-09-04 21:22:31,265 [INFO] Skipping completed model: w2v__askacademia__2019q2__cfg-v0.3.0__seed-1047
+2026-09-04 21:22:31,266 [INFO] Skipping completed model: w2v__askacademia__2019q2__cfg-v0.3.0__seed-2048
+2026-09-04 21:22:31,266 [INFO] Training model: w2v__askacademia__2019q2__cfg-v0.3.0__seed-9182 (seed 9182)
+2026-09-04 21:22:31,289 [INFO] Model complete: w2v__askacademia__2019q2__cfg-v0.3.0__seed-9182 (vocab=213, secs=0.02)
+2026-09-04 21:22:31,313 [INFO] Training model: w2v__academia__2019q1__cfg-v0.3.0__seed-1047 (seed 1047)
+2026-09-04 21:22:31,341 [INFO] Model complete: w2v__academia__2019q1__cfg-v0.3.0__seed-1047 (vocab=214, secs=0.03)
+2026-09-04 21:22:31,361 [INFO] Training model: w2v__academia__2019q1__cfg-v0.3.0__seed-2048 (seed 2048)
+2026-09-04 21:22:31,388 [INFO] Model complete: w2v__academia__2019q1__cfg-v0.3.0__seed-2048 (vocab=214, secs=0.02)
+2026-09-04 21:22:31,413 [INFO] Training model: w2v__academia__2019q1__cfg-v0.3.0__seed-9182 (seed 9182)
+2026-09-04 21:22:31,441 [INFO] Model complete: w2v__academia__2019q1__cfg-v0.3.0__seed-9182 (vocab=214, secs=0.03)
+2026-09-04 21:22:31,463 [INFO] Training model: w2v__academia__2019q2__cfg-v0.3.0__seed-1047 (seed 1047)
+2026-09-04 21:22:31,490 [INFO] Model complete: w2v__academia__2019q2__cfg-v0.3.0__seed-1047 (vocab=214, secs=0.02)
+2026-09-04 21:22:31,511 [INFO] Stage 4 training complete: 5 models trained.
+2026-09-04 21:22:31,511 [INFO] Running Stage 5: Normalize Vectors & Concept Trajectories
+2026-09-04 21:22:31,516 [INFO] Normalized vectors exported: vectors_norm__askacademia__2019q2__cfg-v0.3.0__seed-9182.kv
+2026-09-04 21:22:31,541 [INFO] Normalized vectors exported: vectors_norm__academia__2019q1__cfg-v0.3.0__seed-1047.kv
+2026-09-04 21:22:31,562 [INFO] Normalized vectors exported: vectors_norm__academia__2019q1__cfg-v0.3.0__seed-2048.kv
+2026-09-04 21:22:31,582 [INFO] Normalized vectors exported: vectors_norm__academia__2019q1__cfg-v0.3.0__seed-9182.kv
+2026-09-04 21:22:31,601 [INFO] Normalized vectors exported: vectors_norm__academia__2019q2__cfg-v0.3.0__seed-1047.kv
+2026-09-04 21:22:31,619 [INFO] Stage 5 complete: summary written to /home/user/reddit_embeddings/RUN_SUMMARY.md
+2026-09-04 21:22:31,619 [INFO] =================================================================
+2026-09-04 21:22:31,620 [INFO] ALL REQUESTED PIPELINE STAGES COMPLETED SUCCESSFULLY!
+2026-09-04 21:22:31,620 [INFO] =================================================================
