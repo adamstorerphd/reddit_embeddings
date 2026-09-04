@@ -11,7 +11,7 @@ BASE_URL = "https://arctic-shift.photon-reddit.com/api"
 
 def api_get(
     path: str,
-    params: dict,
+    params: Optional[dict] = None,
     tries: int = 5,
     timeout: int = 60,
     base_url: str = BASE_URL,
@@ -21,7 +21,10 @@ def api_get(
     if requests is None:
         raise ImportError("The 'requests' package is required. Install via pip install requests.")
         
-    url = base_url.rstrip("/") + "/" + path.lstrip("/")
+    if path.startswith("http://") or path.startswith("https://"):
+        url = path
+    else:
+        url = base_url.rstrip("/") + "/" + path.lstrip("/")
     backoff = 3.0
     for attempt in range(1, tries + 1):
         try:
@@ -45,6 +48,10 @@ def api_get(
             backoff *= 2.0
 
     raise RuntimeError(f"GET failed after {tries} attempts: {path} with {params}")
+
+
+# Alias for backward compatibility
+retry_get = api_get
 
 
 def parse_agg(payload: Any) -> List[Tuple[Any, int]]:

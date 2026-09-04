@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# Temporary and staging files
+*.tmp
+*.tmp_*
+.staging*
+shards/temporary/*
+!shards/temporary/.gitkeep
+shards/quarantine/*
+!shards/quarantine/.gitkeep
+
+# Heavy compressed raw text shards (store on Google Drive / external storage)
+shards/tokenized/*.jsonl.gz
+shards/tokenized/**/*.jsonl.gz
+!shards/tokenized/.gitkeep
+!shards/tokenized/pilot/.gitkeep
+
+# Intermediate training checkpoints
+models/checkpoints/*.model*
+!models/checkpoints/.gitkeep
+
+# Large companion numpy arrays (>100MB cannot be pushed to GitHub)
+# (Models can be stored on Google Drive or Git LFS)
+*.npy
+
+# Environment and test caches
+.venv/
+env/
+venv/
+.pytest_cache/
+.coverage
+
+# OS generated files
+.DS_Store
+Thumbs.db
