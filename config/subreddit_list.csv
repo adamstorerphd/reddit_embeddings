@@ -1,0 +1,6 @@
+subreddit,tier,include,pilot,notes
+AskAcademia,medium,TRUE,TRUE,EXAMPLE ROW — replace with your focal list; pilot medium tier
+gradschool,medium,TRUE,FALSE,EXAMPLE ROW — replace
+PhD,small,TRUE,TRUE,EXAMPLE ROW — replace with your focal list; pilot small tier
+academia,large,TRUE,TRUE,EXAMPLE ROW — replace with your focal list; pilot large tier
+Professors,small,FALSE,FALSE,EXAMPLE — excluded example

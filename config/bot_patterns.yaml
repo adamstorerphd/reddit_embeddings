@@ -1,0 +1,7 @@
+# Suspected-bot patterns — FLAG ONLY in v1 (never auto-exclude). One regex per line entry.
+# Format: name: regex
+patterns:
+  automoderator: '(?i)^i am a bot|automoderator'
+  generic_bot_sig: '(?i)beep\.?\s*boop|i am a bot,? and this action was performed automatically'
+  reminder_bot: '(?i)remindme!|remind me bot'
+notes: Extend from pilot inspection sample; every addition bumps config MINOR version.

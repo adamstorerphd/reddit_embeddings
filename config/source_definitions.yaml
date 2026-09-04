@@ -1,0 +1,32 @@
+arctic_shift_repo: https://github.com/ArthurHeitmann/arctic_shift
+arctic_shift_downloads: https://github.com/ArthurHeitmann/arctic_shift/blob/master/download_links.md
+arctic_shift_releases: https://github.com/ArthurHeitmann/arctic_shift/releases
+arctic_shift_search_ui: https://arctic-shift.photon-reddit.com/search
+arctic_shift_download_tool: https://arctic-shift.photon-reddit.com/download-tool
+arctic_shift_api_posts_example: https://arctic-shift.photon-reddit.com/api/posts/search
+arctic_shift_file_notes: https://github.com/ArthurHeitmann/arctic_shift/blob/master/file_content_explanations.md
+arctic_shift_removal_form: https://docs.google.com/forms/d/e/1FAIpQLSfzkmE8Bg6K_xii7aRm66ljzvo2tR59lTsdJ99acW4WX786Vw/viewform?usp=sf_link
+pullpush_search: https://search.pullpush.io
+pullpush_removals: https://removals.pullpush.io
+reddit_api_terms: https://www.redditinc.com/policies/data-api-terms
+reddit_for_researchers_info: https://www.reddit.com/r/reddit4researchers/
+notes: Arctic Shift = community archive (no SLA). Reddit Data API + Reddit for Researchers
+  = official Reddit services (OAuth/approval-gated). Pushshift public API = retired
+  (moderator-only); do not use. Verify liveness in pilot Notebook 01 before production.
+arctic_shift_api_readme: https://github.com/ArthurHeitmann/arctic_shift/blob/master/api
+arctic_shift_status: https://status.arctic-shift.photon-reddit.com
+arctic_shift_endpoints:
+  posts_search: https://arctic-shift.photon-reddit.com/api/posts/search
+  comments_search: https://arctic-shift.photon-reddit.com/api/comments/search
+  posts_aggregate: https://arctic-shift.photon-reddit.com/api/posts/search/aggregate
+  comments_aggregate: https://arctic-shift.photon-reddit.com/api/comments/search/aggregate
+  response_envelope: '{"data": [...]}'
+  search_params: subreddit, after/date-or-unix, before, sort=asc, limit<=100, fields=comma-list
+  aggregate_params: aggregate=created_utc, frequency=year|month|week|day, needs before-or-after,
+    timeouts expected on large subs
+bulk_bulk_updated: dump index is TORRENT-ONLY (Academic Torrents) — not streamable
+  on free Colab; verified 2026-09-03. HF Parquet mirror repo id unverified — not a
+  source until pinned.
+verified_2026_09_03: API search live (posts+comments, 200, data envelope); aggregate
+  accepts month freq but timed out on AskAcademia 3-mo window (best-effort); PullPush
+  429 on first contact (fallback-only confirmed).

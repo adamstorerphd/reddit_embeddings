@@ -1,0 +1,4 @@
+model_id,corpus_type,subreddit_or_group,start_date,end_date,est_docs,est_tokens,total_eligible_tokens,sampled_train_tokens,sampling_fraction,boundary_reason,sufficiency,method,config_version
+# EMPTY UNTIL Notebook 02 FREEZE (Stage 3). One row per trainable period; trainable = sufficient|axis_grade|marginal_merge_first.
+# Example (illustrative only, delete before production):
+# w2v__askacademia__2019q1,tracked,AskAcademia,2019-01-01,2019-04-01,,6500000,6500000,6500000,1.0,base_cell_sufficient,sufficient,aggregate+factors,v1.0.0

@@ -1,0 +1,226 @@
+config_version: v0.3.0
+project_name: reddit_word_embeddings
+created_date: '2026-09-03'
+last_modified: '2026-09-03'
+notes: 'v0.3.0 consolidated pipeline (6 notebooks; audit fixes). Thresholds unchanged
+  from v0.2.1. Counting redesigned aggregate-first: bulk dumps are torrent-only upstream
+  (not Colab-viable); HF Parquet mirror repo id UNVERIFIED — not a source until pinned.
+  v0.2.x history in git-less CHANGELOG below.'
+paths:
+  drive_root: /content/drive/MyDrive/reddit_embeddings_project
+  colab_tmp: /content/tmp_reddit
+  config_dir: config
+  manifests_dir: manifests
+  metadata_dir: metadata
+  shards_tokenized_dir: shards/tokenized
+  shards_tmp_dir: shards/temporary
+  models_w2v_dir: models/word2vec
+  models_ft_dir: models/fasttext
+  vectors_dir: vectors
+  diagnostics_dir: diagnostics
+  logs_dir: logs
+corpus:
+  date_range:
+    start: '2013-01-01'
+    end: '2025-12-31'
+  content_types:
+  - comments
+  - submissions
+  submission_combine: title_sep_selftext
+  unit_of_text: one_record
+  language:
+    policy: english_train_only_count_rest
+    detector: fasttext_lid176
+    threshold: 0.7
+    min_chars_for_detection: 20
+  deletion_policy: exclude_count
+  dedup_policy:
+    rule: exact_within_subreddit_period
+    hash: sha256_normalized
+    fuzzy: false
+  bot_policy:
+    rule: flag_only
+    patterns_file: config/bot_patterns.yaml
+scope:
+  tier1_complete_subreddit: TBD
+  tier2_reference_set_size:
+    min: 100
+    max: 500
+  well_represented_rule_provisional:
+    active_month_share_min: 0.9
+    sufficient_period_share_min: 0.8
+    max_gap_months: 3
+    classes:
+    - solo_per_period
+    - pooled_only
+    - excluded
+  candidate_universe: top_2000_by_prior_volume_or_arctic_index
+sources:
+  priority:
+  - arctic_shift_dumps
+  - arctic_shift_api
+  - reddit_api_recent
+  - pullpush_fallback
+  arctic_shift_dumps:
+    enabled: true
+    monthly_cadence: true
+    lag_weeks: 4-6
+    docs: https://github.com/ArthurHeitmann/arctic_shift
+  arctic_shift_api:
+    enabled: true
+    base: https://arctic-shift.photon-reddit.com/api
+    page_size: 100
+    qpm_budget: 60
+  reddit_api_recent:
+    enabled: false
+    page_size: 100
+    qpm_budget: 60
+    only_newer_than_latest_dump: true
+  pullpush_fallback:
+    enabled: false
+    use_only_if_arctic_gap: true
+slicing:
+  slice_size: 7D
+  count_atom: 1M
+  api_page_size: 100
+  records_per_shard: 50000
+  batch_size: 1000
+  checkpoint_rows: 5000
+reference_sampling:
+  hash_fields:
+  - id
+  algorithm: sha256(id) mod 10000 < fraction*10000
+  fraction_primary: 0.02
+  capped_sensitivity:
+    max_docs_per_subreddit_period: 5000
+  estimands:
+  - volume_weighted_primary
+  - capped_sensitivity
+  sampling_seed: 20260903
+  within_period_cap:
+    max_train_tokens_per_model: 20000000
+    rule: uniform_hash_fraction_to_budget_stratified_by_week
+    record_both:
+    - total_eligible_tokens
+    - sampled_train_tokens
+cleaning:
+  unicode_norm: NFKC
+  lowercase: true
+  keep_stopwords: true
+  keep_negation: true
+  url_token: <URL>
+  user_token: <USER>
+  subreddit_token: <SUBREDDIT>
+  code_token: <CODE>
+  number_rule: pure_digits_gt4_to_<NUM>
+  emoji: drop_and_count
+  markdown: strip_keep_text
+  min_chars_per_doc: 10
+  min_tokens_per_doc: 3
+periodization:
+  atomic_unit: 1M
+  base_unit: 3M
+  reference_base_unit: 6M
+  min_usable_tokens_per_model: 5000000
+  absolute_floor_tokens: 2000000
+  axis_grade_tokens: 10000000
+  monthly_solo_min_tokens: 5000000
+  max_period_months: 12
+  merge_rule: adjacent_forward_only
+  overflow_rule: hash_cap_to_budget
+  insufficient_action: mark_unavailable_or_pooled_only
+  boundaries:
+    timezone: UTC
+    anchor: month_start
+    allow_split_month: false
+embeddings:
+  model: skipgram_w2v
+  toolkit: gensim
+  dim: 200
+  window: 5
+  sg: 1
+  negative: 5
+  epochs: 5
+  min_count: 20
+  interpretation_floor: 100
+  max_vocab: 200000
+  subsample: 1.0e-05
+  workers: 2
+  lr:
+    initial: 0.025
+    min: 0.0001
+  seed_candidates:
+  - 1047
+  - 2048
+  - 9182
+  production_seed_rule: prespecified_stability
+  fasttext:
+    enabled: false
+semantics:
+  concepts_deferred_until: post_training
+  stability_vocab: generic_diagnostic
+ethics:
+  irb_status: no_constraints_reported_2026-09-03
+  safeguards:
+  - no_usernames_in_shards
+  - no_user_profiling
+  - no_long_quotes
+  - support_removal_requests
+  - disclose_archive_deletion_limits
+  - no_redistribution
+  - deletion_compliance_for_api_data
+reliability:
+  retry:
+    max_attempts: 5
+    backoff_base_s: 2
+    retry_on:
+    - 429
+    - 500
+    - 502
+    - 503
+    - timeout
+    - checksum_mismatch
+  resume:
+    treat_in_progress_as_interrupted: true
+    retry_failed_only: true
+  atomic_writes: true
+  drive_sync_check: true
+  log_level: INFO
+  progress_every_n: 10000
+counting:
+  method_priority:
+  - arctic_aggregate
+  - arctic_paged_bounded
+  bulk_dumps_note: torrent-only upstream; no Colab torrent client — local-file streaming
+    supported for user-supplied files only
+  hf_parquet_mirror: UNVERIFIED_NO_REPO_ID — do not use until pinned and probed
+  aggregate:
+    frequency: month
+    needs_before_or_after: true
+    on_timeout_split:
+    - yearly
+    - quarterly
+    record_method_per_row: true
+  paged_fallback:
+    fields:
+    - id
+    - created_utc
+    - subreddit
+    - body
+    - title
+    - selftext
+    page_size: 100
+    pages_per_window_cap: 20
+    estimate_only: true
+  download_tool:
+    url: https://arctic-shift.photon-reddit.com/download-tool
+    format: jsonl
+    role: tier1_complete_subreddit_candidate_VERIFY_IN_PILOT
+seed_eval:
+  diag_words: 200
+  neighbor_k: 10
+  min_cross_seed_jaccard: 0.3
+  production_rule: max_mean_cross_seed_jaccard_ties_to_lowest_seed_id
+  note: generic diagnostic vocab (top frequent); never most-favorable-substantive
+tmp_resolution: use paths.colab_tmp if creatable else <project>/shards/temporary (never
+  crash on missing /content)

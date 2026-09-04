@@ -1,0 +1,1 @@
+model_id,corpus_type,subreddit_or_group,period_id,spec_hash,dim,window,sg,negative,epochs,min_count,max_vocab,subsample,workers,lr,seed,vocab_size,words_processed,epochs_done,train_secs,peak_ram_mb,model_path,vectors_path,model_sha256,vectors_sha256,config_version,status,diagnostics_path

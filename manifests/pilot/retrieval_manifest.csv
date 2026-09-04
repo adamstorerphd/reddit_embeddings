@@ -1,0 +1,1 @@
+unit_id,source,source_url_or_query,subreddit,start_ts,end_ts,content_type,status,attempt_count,started_at,completed_at,last_cursor,n_read,n_usable,token_estimate,output_tmp,output_final,output_sha256,error_category,error_excerpt,config_version,config_sha256,retrieval_date
