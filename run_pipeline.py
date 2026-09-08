@@ -29,7 +29,14 @@ from typing import Dict, List, Optional
 
 import yaml
 
-# Ensure project root is in sys.path
+# Ensure project root is in sys.path so the shared 'src' package is importable,
+# regardless of the current working directory. Search upward from this file.
+_self = Path(__file__).resolve()
+_repo_root = next((p for p in [_self, *_self.parents]
+                   if (p / "config/project_config.yaml").is_file()), None)
+if _repo_root is not None and str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
 from src.paths import get_project_root, resolve_tmp
 from src.storage import atomic_write_bytes, atomic_write_text, save_gensim_atomic, sha256_file
 from src.cleaner import clean_and_tokenize, extract_text, lang_of
