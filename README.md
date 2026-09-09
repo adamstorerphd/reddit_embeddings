@@ -1,6 +1,21 @@
 # Restartable Reddit Word-Embedding Pipeline
 ### Project root · config v0.3.0 (audited + consolidated 2026-09-03) · 6 notebooks, all executed
 
+> ## LLM handoff bundle
+> **`LLM_HANDOFF_BUNDLE.txt`** (337 KB, ~49k tokens) is a single self-contained
+> dump of this repository built for pasting into an LLM. It contains a project
+> description, the verified state of the tree, a ranked defect list with
+> evidence, a file-by-file inventory, and the verbatim source of all 7 notebooks,
+> the `src/` library, `run_pipeline.py`, the tests, the config and `docs/00`–`07`.
+>
+> Rebuild it after any change with `python tools/build_llm_bundle.py`, or verify
+> it has not drifted with `python tools/build_llm_bundle.py --check`.
+>
+> **Read PART 2 and PART 3 of that file before trusting anything below.** In
+> particular, the "all executed" claim in this README's subtitle is wrong: no
+> notebook has saved outputs, and every artefact currently in `models/`,
+> `vectors/` and `manifests/` came from a `--dry-run` on synthetic data.
+
 This workspace contains the **five initial deliverables** (no production code yet, per your instruction).
 
 ## Start here (read in order)
