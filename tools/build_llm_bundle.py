@@ -1046,6 +1046,8 @@ def build() -> str:
     s.append(f"Repo:    adamstorerphd/reddit_embeddings\n")
     s.append(f"Branch:  {br}\n")
     s.append(f"Commit:  {sha}\n")
+    s.append("         (the commit this was built FROM; a file cannot record its own hash,\n")
+    s.append("          so after committing, the bundle names its parent commit)\n")
     s.append("Purpose: paste this whole file into an LLM to diagnose and rewrite the pipeline.\n")
     s.append(rule("=") + "\n")
 
@@ -1250,14 +1252,33 @@ def main() -> int:
         if current == text:
             print(f"OK: {args.out} matches the current working tree.")
             return 0
-        # Ignore the timestamp line, which legitimately differs between builds.
-        def strip_ts(t: str) -> list[str]:
-            return [l for l in t.splitlines()
-                    if not l.startswith("Built:") and not l.startswith("END OF BUNDLE")]
-        if strip_ts(current) == strip_ts(text):
-            print(f"OK: {args.out} matches the working tree (ignoring build timestamp).")
+
+        # The provenance header legitimately differs between builds: the build
+        # timestamp changes every run, and the recorded commit changes as soon as
+        # the bundle itself is committed (a file cannot contain its own hash).
+        # Neither is content, so both are excluded from the drift comparison.
+        PROVENANCE = ("Built:", "Commit:", "END OF BUNDLE",
+                      "         (the commit this was built FROM",
+                      "          so after committing, the bundle names its parent commit)")
+
+        def strip_provenance(t: str) -> list[str]:
+            return [l for l in t.splitlines() if not l.startswith(PROVENANCE)]
+
+        if strip_provenance(current) == strip_provenance(text):
+            print(f"OK: {args.out} matches the working tree "
+                  f"(ignoring build timestamp and the commit it was built from).")
             return 0
         print(f"FAIL: {args.out} has drifted from the working tree. Rebuild it.")
+        # Show where it first diverges, so the drift is actionable.
+        a, b = strip_provenance(current), strip_provenance(text)
+        for n, (x, y) in enumerate(zip(a, b), 1):
+            if x != y:
+                print(f"  first divergence at content line {n}:")
+                print(f"    on disk: {x[:90]!r}")
+                print(f"    rebuilt: {y[:90]!r}")
+                break
+        else:
+            print(f"  line counts differ: on disk {len(a)} vs rebuilt {len(b)}")
         return 1
 
     args.out.write_text(text, encoding="utf-8")

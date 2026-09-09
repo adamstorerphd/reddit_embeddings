@@ -1,9 +1,11 @@
 ================================================================================================
 REDDIT WORD-EMBEDDINGS PIPELINE -- FULL CONTEXT BUNDLE FOR LLM REVIEW
-Built:   2026-09-09 21:18 UTC
+Built:   2026-09-09 21:20 UTC
 Repo:    adamstorerphd/reddit_embeddings
 Branch:  arena/01a087fa-reddit-embeddings
-Commit:  c0b58d30990302bef632ac621f5571f2ef2a8363
+Commit:  e06bda8d1ee0f26e5512cfef355522e6c14a43ae
+         (the commit this was built FROM; a file cannot record its own hash,
+          so after committing, the bundle names its parent commit)
 Purpose: paste this whole file into an LLM to diagnose and rewrite the pipeline.
 ================================================================================================
 
@@ -5956,5 +5958,5 @@ Re-run it after any change; `--check` fails if the committed bundle has drifted
 from the sources it embeds.
 
 ================================================================================================
-END OF BUNDLE -- built 2026-09-09 21:18 UTC from arena/01a087fa-reddit-embeddings@c0b58d309903 by tools/build_llm_bundle.py
+END OF BUNDLE -- built 2026-09-09 21:20 UTC from arena/01a087fa-reddit-embeddings@e06bda8d1ee0 by tools/build_llm_bundle.py
 ================================================================================================
